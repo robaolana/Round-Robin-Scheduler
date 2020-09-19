@@ -31,12 +31,14 @@ struct proccess
 	string PID;
 	int arrival_Time;
 	int burst_Time;
+	int burst_Time_u;
 
 	proccess()
 	{
 		PID = "";
 		arrival_Time = 0;
 		burst_Time = 0;
+		burst_Time_u = 0;
 	}
 
 	// A job with  burst time equal to zero is treated as Completed //
@@ -56,6 +58,12 @@ int main()
 	int quantum = 0;
 
 	cin >> quantum;
+
+	cout << "\n\nEnter the length of the context switch [1-100]: ";
+
+	double context_switch = 0;
+
+	cin >> context_switch;
 
 	//Check for invalid quantum size
 	while (quantum < 1 || quantum > 100)
@@ -124,6 +132,7 @@ int main()
 				}
 
 				P.burst_Time = atoi(temp.c_str());
+				P.burst_Time_u = atoi(temp.c_str());
 
 				jobs.push_back(P);
 			}
@@ -145,7 +154,7 @@ int main()
 
 			if(fout.is_open())
 			{
-				fout << "Quantum Number each " << quantum <<" Cycles, Executing Process' Name\n";
+				//fout << "Quantum Number each " << quantum <<" Cycles, Executing Process' Name\n";
 
 				int running_Time = 1;
 
@@ -155,8 +164,13 @@ int main()
 
 				int has_burst_zero = 0;
 
+				double switch_time = 0;
+
+				double surplus = 0;
+
 
 				//Continue until each proccess' burst time becomes equal to zero
+				
 				while (has_burst_zero != total_Processes)
 				{
 					isIdle = true;
@@ -165,14 +179,39 @@ int main()
 					{
 						if (jobs[i].arrival_Time < running_Time && jobs[i].burst_Time > 0)
 						{
-							fout << quantum_Number << ',' << jobs[i].PID << endl;
+							
+							if (jobs[i].burst_Time - quantum <= 0){
+								//if quantum time is above the run time of the process
+								if (quantum - jobs[i].burst_Time > 1){
+									//calculate the excess time program is going to falsely calculate
+									surplus += (quantum - jobs[i].burst_Time_u);
+									//deduct surplus
+									fout << "Time taken by " << jobs[i].PID << ": " << (((quantum_Number) * quantum) + (switch_time + context_switch) - jobs[i].arrival_Time - surplus) << endl;
+								}
+
+								else{
+									fout << "Time taken by " << jobs[i].PID << ": " << ((quantum_Number+1) * quantum) + (switch_time + context_switch) - jobs[i].arrival_Time - surplus << endl;
+							
+								}
+							}
+
+							
+							//fout << (quantum_Number) * quantum << ',' << jobs[i].PID << "    " << jobs[i].burst_Time << endl;
+
 
 							jobs[i].burst_Time = jobs[i].burst_Time - quantum;
 
+							
 							running_Time = running_Time + quantum;
 							quantum_Number++;
+							//compute time taken so far in doing context switches
+							switch_time += context_switch;
 
 							isIdle = false;
+
+
+
+							
 
 							if (jobs[i].burst_Time <= 0)
 								has_burst_zero++;	//Increment size by one
